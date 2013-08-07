@@ -1,7 +1,6 @@
 from pyoauth2 import AccessToken, Client as oAuthClient
 import simplejson, collections
 
-
 class TaskRabbitError(Exception):
 
     def __init__(self, message):
@@ -10,10 +9,12 @@ class TaskRabbitError(Exception):
     def __str__(self):
         return repr(self.message)
 
-
 Endpoint = collections.namedtuple("Endpoint", ["url", "method"])
 
 class TaskRabbit(object):
+    """
+        main entry point into the api
+    """
 
     URL             = "https://taskrabbitdev.com"
     AUTHORIZE_URL   = "https://taskrabbitdev.com/api/authorize"
@@ -50,6 +51,7 @@ class TaskRabbit(object):
         TaskRabbit.APP_KEY      = key
         TaskRabbit.APP_SECRET   = secret
 
+    # TODO: make a static to load this from a external file or dictionary
     def __init__(self, user_token):
         self.user_token = user_token
 
@@ -66,6 +68,9 @@ class TaskRabbit(object):
         self.city_dict = {}
 
     def __request(self, endpoint, method="get", **opts):
+        """
+            main entrypoint to the api, should only be called by request
+        """
         if method not in ["get", "post", "delete"]:
             raise TaskRabbitError("method must be either get or post or delete, received : " + str(method))
 
@@ -78,6 +83,9 @@ class TaskRabbit(object):
         return simplejson.loads(response.body)
 
     def request(self, name, id = [""], override_method = False, **opts):
+        """
+            makes a request to the named api endpoint
+        """
         if name not in TaskRabbit.ENDPOINTS:
             raise TaskRabbitError("unknown endpoint name : " + str(name))
 
@@ -87,27 +95,48 @@ class TaskRabbit(object):
         return self.__request(end_point.url.format(*id), override_method or end_point.method, **opts)
 
     def findCityId(self, city_name):
+        """
+            given a city name, returns the city id
+        """
         if len(self.city_dict) == 0:
             self.city_dict = dict((i.name.lower(), i.id) for i in self.cities())
 
         return self.city_dict[city_name.lower()]
 
     def cities(self):
+        """
+            lists all cities (returns an array of City)
+        """
         return map(lambda a: City(self, **a), self.request("city")["items"])
 
+    # todo - the null case
     def findCity(self, city_id):
+        """
+            returns a City for the given city_id
+        """
         return City(self, **self.request("city", [city_id]))
 
+    # todo - the null case
     def findUser(self, user_id):
+        """
+            returns a User for the given user_id
+        """
         return User(self, **self.request("user", [user_id]))
 
+    # todo - the null case
     def findTask(self, task_id):
+        """
+            returns a Task for the given task_id
+        """
         return Task(self, **self.request("task", [task_id]))
 
     def findTasks(self):
         return map(lambda a: Task(self, **a), self.request("task")["items"])
 
     def createTask(self, name, named_price_in_dollars, city, **kwargs):
+        """
+            creates a task for a user
+        """
         kwargs.update({
             "name"          : name,
             "named_price"   : named_price_in_dollars,
