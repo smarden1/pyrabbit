@@ -3,4 +3,4 @@ pyrabbit
 
 python wrapper for the task rabbit api
 
-Still a work in progress...
+Was a work in progess but is now abandoned!
