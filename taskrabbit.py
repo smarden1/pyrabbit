@@ -131,6 +131,9 @@ class TaskRabbit(object):
         return Task(self, **self.request("task", [task_id]))
 
     def findTasks(self):
+        """
+            find all tasks for the api user
+        """
         return map(lambda a: Task(self, **a), self.request("task")["items"])
 
     def createTask(self, name, named_price_in_dollars, city, **kwargs):
@@ -146,10 +149,16 @@ class TaskRabbit(object):
         return Task(self, **self.request("task", "", "post", data={"task" : kwargs}))
 
     def findAccount(self):
+        """
+            returns this User
+        """
         return User(self, **self.request("account"))
 
 class Base(object):
-
+    """
+        generic class to represent return data
+        this should be extended
+    """
     def __init__(self, request, **kwargs):
         self.request = request
 
@@ -168,17 +177,25 @@ class Base(object):
 
 
 class City(Base):
-
+    """
+        Users live in cities and tasks happen within cities,
+        Cities should have an id and a name
+    """
     def __repr__(self):
         return "%s : %s" % (self.id, self.name)
 
 class User(Base):
-
+    """
+        users live in cities, can make tasks, and negotiate them (accept, decline, counter, etc)
+    """
     def __repr__(self):
         return "%s : %s" % (self.id, self.display_name)
 
 class Offer(object):
-
+    """
+        offers occur between users in regards to a specific task,
+        i.e. John accepts an offer from Bob to paint his house
+    """
     def __init__(self, request, task_id, **kwargs):
         super().__init__()
         self.task_id = task_id
@@ -187,17 +204,29 @@ class Offer(object):
         return "task_id : %s, offer_id : %s, offer_state : %s, price : %s" % (self.task_id, self.id, self.state, self.charge_price)
 
     def accept(self):
+        """
+            accept this offer
+        """
         return Offer(self.request, **self.request.request("offer_accept", [self.task_id, self.id]))
 
     def decline(self):
+        """
+            decline this offer
+        """
         return Offer(self.request, **self.request.request("offer_decline", [self.task_id, self.id]))
 
     def counter(self, charge_price, comments):
+        """
+            counter this offer with a new price and a comment
+        """
         data = {"charge_price" : charge_price, "comments" : comments}
         return Offer(self.request, **self.request.request("offer_counter", [self.task_id, self.id], data=data))
 
 class Task(Base):
-
+    """
+        tasks are the unit of exchange
+        they are created by a user, negotiated by another, and then completed
+    """
     def __repr__(self):
         return "%s : %s" % (self.id, self.name)
 
@@ -205,13 +234,22 @@ class Task(Base):
     # can close reimburse and do other things here
     # TODO - make sure this is correct
     def close(self):
+        """
+            close this task
+        """
         return self.request.request("task_close", self.id)["state"] == "closed"
 
     def delete(self):
+        """
+            delete this task
+        """
         return self.request.request("task", self.id, "delete")
 
     # verify that this is working
     def comment(self, comment):
+        """
+            comment on this task
+        """
         data = {"comment" : {"content" : comment}}
         return self.request.request("task_comment", self.id, data=data)
 
